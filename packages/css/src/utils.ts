@@ -1,4 +1,4 @@
-import { ICssPropToToken, IScreens, ISheet, TUtility } from "./types";
+import { ICssPropToToken, IMediaQueries, ISheet, TUtility } from "./types";
 
 export const cssPropToToken: ICssPropToToken<any> = {
   border: ["", "borderStyles", "colors"],
@@ -55,7 +55,7 @@ export const cssPropToToken: ICssPropToToken<any> = {
   transition: "transitions",
 };
 
-export const createSheets = (env: any, screens: IScreens = {}) => {
+export const createSheets = (env: any, mediaQueries: IMediaQueries = {}) => {
   const tags: HTMLStyleElement[] = [];
   if (env && env.document) {
     const head = env.document.querySelector("head");
@@ -72,7 +72,7 @@ export const createSheets = (env: any, screens: IScreens = {}) => {
     return {
       tags,
       sheets: ["__variables__", ""]
-        .concat(Object.keys(screens))
+        .concat(Object.keys(mediaQueries))
         .reduce<{ [key: string]: ISheet }>((aggr, key, index) => {
           let style = existingStyles[index];
           if (!style) {
@@ -96,7 +96,7 @@ export const createSheets = (env: any, screens: IScreens = {}) => {
   return {
     tags,
     sheets: ["__variables__", ""]
-      .concat(Object.keys(screens))
+      .concat(Object.keys(mediaQueries))
       .reduce<{ [key: string]: ISheet }>((aggr, key) => {
         aggr[key] = {
           content: "",

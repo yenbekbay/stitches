@@ -6,7 +6,7 @@ import {
   Properties,
 } from "./css-types";
 
-export interface IScreens {
+export interface IMediaQueries {
   [key: string]: (css: string) => string;
 }
 
@@ -17,8 +17,8 @@ export interface IAtom {
   cssHyphenProp: string;
   value: string;
   pseudo: string | undefined;
-  mediaQueries: string[] | undefined;
-  screen: string;
+  inlineMediaQueries: string[] | undefined;
+  mediaQuery: string;
   _className?: string;
   toString: (this: IAtom) => string;
   [ATOM]: true;
@@ -325,32 +325,34 @@ export interface IConfig {
   showFriendlyClassnames?: boolean;
   prefix?: string;
   utilityFirst?: boolean;
-  screens?: IScreens;
+  mediaQueries?: IMediaQueries;
   tokens?: ITokensDefinition;
   utils?: {
     [name: string]: TUtility<any, any>;
   };
 }
 
-export type TUtilityFirstCss<T extends IConfig> = T["screens"] extends unknown
+export type TUtilityFirstCss<
+  T extends IConfig
+> = T["mediaQueries"] extends unknown
   ? {
       override?: TRecursiveCss<T>;
     } & TRecursiveUtils<T>
   : {
       override?: TRecursiveCss<T> &
         {
-          [S in keyof T["screens"]]?: TRecursiveCss<T>;
+          [S in keyof T["mediaQueries"]]?: TRecursiveCss<T>;
         };
     } & {
-      [S in keyof T["screens"]]?: TRecursiveUtils<T>;
+      [S in keyof T["mediaQueries"]]?: TRecursiveUtils<T>;
     } &
       TRecursiveUtils<T>;
 
-export type TDefaultCss<T extends IConfig> = T["screens"] extends object
+export type TDefaultCss<T extends IConfig> = T["mediaQueries"] extends object
   ? TRecursiveCss<T> &
       TRecursiveUtils<T> &
       {
-        [S in keyof T["screens"]]?: TRecursiveCss<T> & TRecursiveUtils<T>;
+        [S in keyof T["mediaQueries"]]?: TRecursiveCss<T> & TRecursiveUtils<T>;
       }
   : TRecursiveCss<T> & TRecursiveUtils<T>;
 

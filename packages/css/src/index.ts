@@ -4,7 +4,7 @@ import {
   IComposedAtom,
   IConfig,
   ICssPropToToken,
-  IScreens,
+  IMediaQueries,
   ISheet,
   IThemeAtom,
   ITokensDefinition,
@@ -39,8 +39,8 @@ const toStringCompose = function (this: IComposedAtom) {
 };
 
 const createToString = (
-  sheets: { [screen: string]: ISheet },
-  screens: IScreens = {},
+  sheets: { [mediaQuery: string]: ISheet },
+  mediaQueries: IMediaQueries = {},
   cssClassnameProvider: (atom: IAtom, seq: number | null) => string,
   preInjectedRules: Set<string>
 ) => {
@@ -56,16 +56,16 @@ const createToString = (
 
     if (shouldInject) {
       let cssRule = "";
-      if (this.mediaQueries) {
+      if (this.inlineMediaQueries) {
         let allMediaQueries = "";
         let endBrackets = "";
-        this.mediaQueries.forEach((mediaQuery) => {
+        this.inlineMediaQueries.forEach((mediaQuery) => {
           allMediaQueries += `${mediaQuery}{`;
           endBrackets += "}";
         });
         // We need to add extra specificity (className) as we want media queries to override
         // normal values when active, nesting adds specificity
-        cssRule = `${allMediaQueries}.${className}${this.mediaQueries
+        cssRule = `${allMediaQueries}.${className}${this.inlineMediaQueries
           .map(() => `.${className}`)
           .join("")}${this.pseudo || ""}{${
           this.cssHyphenProp
@@ -76,8 +76,8 @@ const createToString = (
         }:${value};}`;
       }
 
-      sheets[this.screen].insertRule(
-        this.screen ? screens[this.screen](cssRule) : cssRule
+      sheets[this.mediaQuery].insertRule(
+        this.mediaQuery ? mediaQueries[this.mediaQuery](cssRule) : cssRule
       );
     }
 
@@ -85,7 +85,7 @@ const createToString = (
     // 1. delete everything but `id` for specificity check
 
     // @ts-ignore
-    this.cssHyphenProp = this.value = this.pseudo = this.screen = this.mediaQueries = undefined;
+    this.cssHyphenProp = this.value = this.pseudo = this.mediaQuery = this.mediaQueries = undefined;
 
     // 2. put on a _className
     this._className = className;
@@ -98,8 +98,8 @@ const createToString = (
 };
 
 const createServerToString = (
-  sheets: { [screen: string]: ISheet },
-  screens: IScreens = {},
+  sheets: { [mediaQuery: string]: ISheet },
+  mediaQueries: IMediaQueries = {},
   cssClassnameProvider: (atom: IAtom, seq: number | null) => string
 ) => {
   return function toString(this: IAtom) {
@@ -111,8 +111,8 @@ const createServerToString = (
       this.cssHyphenProp
     }:${value};}`;
 
-    sheets[this.screen].insertRule(
-      this.screen ? screens[this.screen](cssRule) : cssRule
+    sheets[this.mediaQuery].insertRule(
+      this.mediaQuery ? mediaQueries[this.mediaQuery](cssRule) : cssRule
     );
 
     // We do not clean out the atom here, cause it will be reused
@@ -209,14 +209,14 @@ export const createCss = <T extends IConfig>(
     const hash =
       seq === null
         ? hashString(
-            `${atom.screen || ""}${atom.cssHyphenProp.replace(
+            `${atom.mediaQuery || ""}${atom.cssHyphenProp.replace(
               /-(moz|webkit|ms)-/,
               ""
             )}${atom.pseudo || ""}${atom.value}`
           )
         : seq;
     const name = showFriendlyClassnames
-      ? `${atom.screen ? `${atom.screen}_` : ""}${atom.cssHyphenProp
+      ? `${atom.mediaQuery ? `${atom.mediaQuery}_` : ""}${atom.cssHyphenProp
           .replace(/-(moz|webkit|ms)-/, "")
           .split("-")
           .map((part) => part[0])
@@ -226,7 +226,7 @@ export const createCss = <T extends IConfig>(
     return `${classPrefix}${name}`;
   };
 
-  const { tags, sheets } = createSheets(env, config.screens);
+  const { tags, sheets } = createSheets(env, config.mediaQueries);
   const preInjectedRules = new Set<string>();
   // tslint:disable-next-line
   for (const sheet in sheets) {
@@ -238,11 +238,11 @@ export const createCss = <T extends IConfig>(
   let toString = env
     ? createToString(
         sheets,
-        config.screens,
+        config.mediaQueries,
         cssClassnameProvider,
         preInjectedRules
       )
-    : createServerToString(sheets, config.screens, cssClassnameProvider);
+    : createServerToString(sheets, config.mediaQueries, cssClassnameProvider);
 
   let themeToString = createThemeToString(classPrefix, sheets.__variables__);
   const compose = (...atoms: IAtom[]): IComposedAtom => {
@@ -257,7 +257,7 @@ export const createCss = <T extends IConfig>(
   const createAtom = (
     cssProp: string,
     value: any,
-    screen = "",
+    mediaQuery = "",
     selectors?: string[]
   ) => {
     const token: any = cssPropToToken[cssProp as keyof ICssPropToToken<any>];
@@ -282,7 +282,9 @@ export const createCss = <T extends IConfig>(
     }
     const isVendorPrefixed = cssProp[0] === cssProp[0].toUpperCase();
 
-    const mediaQueries = selectors?.filter((part) => part.startsWith("@"));
+    const inlineMediaQueries = selectors?.filter((part) =>
+      part.startsWith("@")
+    );
     const pseudoString = selectors
       ?.filter((part) => !part.startsWith("@"))
       .join("");
@@ -292,8 +294,8 @@ export const createCss = <T extends IConfig>(
     const id =
       cssProp.toLowerCase() +
       (pseudoString || "") +
-      (mediaQueries ? mediaQueries.join("") : "") +
-      screen;
+      (inlineMediaQueries ? inlineMediaQueries.join("") : "") +
+      mediaQuery;
 
     // make a uid accouting for different values
     const uid = id + value;
@@ -321,8 +323,8 @@ export const createCss = <T extends IConfig>(
       cssHyphenProp,
       value: tokenValue,
       pseudo: pseudoString,
-      mediaQueries,
-      screen,
+      inlineMediaQueries,
+      mediaQuery,
       toString,
       [ATOM]: true,
     };
@@ -337,27 +339,27 @@ export const createCss = <T extends IConfig>(
       [key: string]: any;
     },
     cb: (atom: IAtom) => void,
-    screen = "",
+    mediaQuery = "",
     pseudo: string[] = [],
     canCallUtils = true,
     canCallSpecificityProps = true
   ) => {
     // tslint:disable-next-line
     for (const prop in props) {
-      if (config.screens && prop in config.screens) {
-        if (screen) {
+      if (config.mediaQueries && prop in config.mediaQueries) {
+        if (mediaQuery) {
           throw new Error(
-            `@stitches/css - You are nesting the screen "${prop}" into "${screen}", that makes no sense? :-)`
+            `@stitches/css - You are nesting the mediaQuery "${prop}" into "${mediaQuery}", that makes no sense? :-)`
           );
         }
         createCssAtoms(props[prop], cb, prop, pseudo);
       } else if (!prop[0].match(/[a-zA-Z]/)) {
-        createCssAtoms(props[prop], cb, screen, pseudo.concat(prop));
+        createCssAtoms(props[prop], cb, mediaQuery, pseudo.concat(prop));
       } else if (canCallUtils && prop in utils) {
         createCssAtoms(
           utils[prop](config)(props[prop]) as any,
           cb,
-          screen,
+          mediaQuery,
           pseudo,
           false
         );
@@ -365,7 +367,7 @@ export const createCss = <T extends IConfig>(
         createCssAtoms(
           specificityProps[prop](config)(props[prop]) as any,
           cb,
-          screen,
+          mediaQuery,
           pseudo,
           false,
           false
@@ -375,7 +377,7 @@ export const createCss = <T extends IConfig>(
           createAtom(
             prop,
             props[prop],
-            screen,
+            mediaQuery,
             pseudo.length ? pseudo : undefined
           )
         );
@@ -387,7 +389,7 @@ export const createCss = <T extends IConfig>(
       [key: string]: any;
     },
     cb: (atom: IAtom) => void,
-    screen = "",
+    mediaQuery = "",
     pseudo: string[] = [],
     canOverride = true
   ) => {
@@ -399,21 +401,27 @@ export const createCss = <T extends IConfig>(
             "@stitches/css - You can not override at this level, only at the top level definition"
           );
         }
-        createCssAtoms(props[prop], cb, screen, pseudo);
-      } else if (config.screens && prop in config.screens) {
-        if (screen) {
+        createCssAtoms(props[prop], cb, mediaQuery, pseudo);
+      } else if (config.mediaQueries && prop in config.mediaQueries) {
+        if (mediaQuery) {
           throw new Error(
-            `@stitches/css - You are nesting the screen "${prop}" into "${screen}", that makes no sense? :-)`
+            `@stitches/css - You are nesting the mediaQuery "${prop}" into "${mediaQuery}", that makes no sense? :-)`
           );
         }
         createUtilsAtoms(props[prop], cb, prop, pseudo, false);
       } else if (!prop[0].match(/[a-zA-Z]/)) {
-        createUtilsAtoms(props[prop], cb, screen, pseudo.concat(prop), false);
+        createUtilsAtoms(
+          props[prop],
+          cb,
+          mediaQuery,
+          pseudo.concat(prop),
+          false
+        );
       } else if (prop in utils) {
         createCssAtoms(
           utils[prop](config)(props[prop]) as any,
           cb,
-          screen,
+          mediaQuery,
           pseudo,
           false
         );
@@ -426,7 +434,7 @@ export const createCss = <T extends IConfig>(
   };
 
   // pre-checked config to avoid checking these all the time
-  const screens = config.screens || {};
+  const mediaQueries = config.mediaQueries || {};
   const utils = config.utils || {};
   const tokens = config.tokens || {};
 
@@ -517,7 +525,7 @@ export const createCss = <T extends IConfig>(
     // and still cache is it is being reused
     toString = createServerToString(
       sheets,
-      config.screens,
+      config.mediaQueries,
       cssClassnameProvider
     );
 
@@ -537,7 +545,7 @@ export const createCss = <T extends IConfig>(
 
     return {
       result,
-      styles: Object.keys(screens).reduce(
+      styles: Object.keys(mediaQueries).reduce(
         (aggr, key) => {
           return aggr.concat(`/* STITCHES:${key} */\n${sheets[key].content}`);
         },

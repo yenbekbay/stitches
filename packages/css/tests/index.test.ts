@@ -63,7 +63,7 @@ describe("createCss", () => {
     expect(atom.id).toBe("color");
     expect(atom.cssHyphenProp).toEqual("color");
     expect(atom.pseudo).toBe(undefined);
-    expect(atom.screen).toBe("");
+    expect(atom.mediaQuery).toBe("");
     expect(atom.value).toBe("red");
 
     const { styles } = css.getStyles(() => {
@@ -93,7 +93,7 @@ describe("createCss", () => {
     expect(atom.id).toBe("color");
     expect(atom.cssHyphenProp).toEqual("color");
     expect(atom.pseudo).toBe(undefined);
-    expect(atom.screen).toBe("");
+    expect(atom.mediaQuery).toBe("");
     expect(atom.value).toBe("var(--colors-RED)");
 
     const { styles } = css.getStyles(() => {
@@ -109,7 +109,7 @@ describe("createCss", () => {
   test("should create screens", () => {
     const css = createCss(
       {
-        screens: {
+        mediaQueries: {
           tablet: (rule) => `@media (min-width: 700px) { ${rule} }`,
         },
       },
@@ -119,7 +119,7 @@ describe("createCss", () => {
     expect(atom.id).toBe("colortablet");
     expect(atom.cssHyphenProp).toEqual("color");
     expect(atom.pseudo).toBe(undefined);
-    expect(atom.screen).toBe("tablet");
+    expect(atom.mediaQuery).toBe("tablet");
     const { styles } = css.getStyles(() => {
       expect(atom.toString()).toBe("_2796359201");
       return "";
@@ -137,7 +137,7 @@ describe("createCss", () => {
     expect(atom.id).toBe("color:hover");
     expect(atom.cssHyphenProp).toEqual("color");
     expect(atom.pseudo).toBe(":hover");
-    expect(atom.screen).toBe("");
+    expect(atom.mediaQuery).toBe("");
     const { styles } = css.getStyles(() => {
       expect(atom.toString()).toBe("_627048087");
       return "";
@@ -207,7 +207,7 @@ describe("createCss", () => {
     const fakeEnv = createFakeEnv();
     const css = createCss(
       {
-        screens: {
+        mediaQueries: {
           tablet: (rule) => `@media (min-width: 700px) { ${rule} }`,
         },
       },
@@ -361,7 +361,7 @@ describe("createCss", () => {
   test("should handle screen selector", () => {
     const css = createCss(
       {
-        screens: {
+        mediaQueries: {
           mobile: (className) => `@media(min-width:700px){${className}}`,
         },
       },
@@ -381,7 +381,7 @@ describe("createCss", () => {
   test("should handle pseudo in screen selector", () => {
     const css = createCss(
       {
-        screens: {
+        mediaQueries: {
           mobile: (className) => `@media(min-width:700px){${className}}`,
         },
       },
