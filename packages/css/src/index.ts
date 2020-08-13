@@ -16,6 +16,7 @@ import {
   getVendorPrefixAndProps,
   hashString,
   specificityProps,
+  isObject,
 } from "./utils";
 
 export * from "./types";
@@ -53,6 +54,13 @@ const createToString = (
     const shouldInject =
       !preInjectedRules.size || !preInjectedRules.has(`.${className}`);
     const value = this.value;
+    // Allow using "&" to position the classname, also multiple times
+    const selector =
+      this.pseudo && this.pseudo.includes("&")
+        ? this.pseudo.replace(/&/gi, `.${className}`)
+        : this.pseudo
+        ? `.${className}${this.pseudo}`
+        : `.${className}`;
 
     if (shouldInject) {
       let cssRule = "";
@@ -65,15 +73,14 @@ const createToString = (
         });
         // We need to add extra specificity (className) as we want media queries to override
         // normal values when active, nesting adds specificity
-        cssRule = `${allMediaQueries}.${className}${this.inlineMediaQueries
-          .map(() => `.${className}`)
-          .join("")}${this.pseudo || ""}{${
-          this.cssHyphenProp
-        }:${value};}${endBrackets}`;
+        cssRule = `${allMediaQueries}${selector.replace(
+          `.${className}`,
+          `.${className}${this.inlineMediaQueries
+            .map(() => `.${className}`)
+            .join("")}`
+        )}{${this.cssHyphenProp}:${value};}${endBrackets}`;
       } else {
-        cssRule = `.${className}${this.pseudo || ""}{${
-          this.cssHyphenProp
-        }:${value};}`;
+        cssRule = `${selector}{${this.cssHyphenProp}:${value};}`;
       }
 
       sheets[this.mediaQuery].insertRule(
@@ -353,7 +360,7 @@ export const createCss = <T extends IConfig>(
           );
         }
         createCssAtoms(props[prop], cb, prop, pseudo);
-      } else if (!prop[0].match(/[a-zA-Z]/)) {
+      } else if (isObject(props[prop])) {
         createCssAtoms(props[prop], cb, mediaQuery, pseudo.concat(prop));
       } else if (canCallUtils && prop in utils) {
         createCssAtoms(
@@ -409,7 +416,7 @@ export const createCss = <T extends IConfig>(
           );
         }
         createUtilsAtoms(props[prop], cb, prop, pseudo, false);
-      } else if (!prop[0].match(/[a-zA-Z]/)) {
+      } else if (isObject(props[prop])) {
         createUtilsAtoms(
           props[prop],
           cb,

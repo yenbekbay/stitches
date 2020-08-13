@@ -303,3 +303,7 @@ export const hashString = (str: string) => {
    * signed int to an unsigned by doing an unsigned bitshift. */
   return hash >>> 0;
 };
+
+export const isObject = (value: any) => {
+  return value !== null && !Array.isArray(value) && typeof value === "object";
+};

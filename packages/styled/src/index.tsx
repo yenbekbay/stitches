@@ -1,6 +1,6 @@
 import {
   IConfig,
-  IScreens,
+  IMediaQueries,
   TCss,
   TDefaultCss,
   TUtilityFirstCss,
@@ -238,7 +238,7 @@ export interface IBaseStyled<CSS, SCREENS> {
       };
     },
     VE = {
-      [P in keyof V]?: SCREENS extends IScreens
+      [P in keyof V]?: SCREENS extends IMediaQueries
         ?
             | keyof V[P]
             | false
@@ -327,7 +327,7 @@ interface IStyledConstructor<
       };
     },
     VE = {
-      [P in keyof V]?: SCREENS extends IScreens
+      [P in keyof V]?: SCREENS extends IMediaQueries
         ?
             | false
             | null
@@ -378,7 +378,7 @@ let hasWarnedInlineStyle = false;
 export const createStyled = <
   T extends IConfig,
   CSS = T extends { utilityFirst: true } ? TUtilityFirstCss<T> : TDefaultCss<T>,
-  SCREENS = T["screens"]
+  SCREENS = T["mediaQueries"]
 >(
   config: T
 ): {
