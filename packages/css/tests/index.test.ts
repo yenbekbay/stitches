@@ -173,6 +173,9 @@ describe("createCss", () => {
     expect(styles.length).toBe(2);
     expect(styles[1].trim()).toBe("/* STITCHES */\n\n._1725676875{color:red;}");
   });
+  /*
+    // I do not think this is necessary, it costs more checking all pseudos than
+    // just injecting additional rules
   test("should handle specificity with different but same pseudo", () => {
     const css = createCss({}, null);
     expect(
@@ -182,6 +185,7 @@ describe("createCss", () => {
       ).toString()
     ).toBe("_3266759165");
   });
+  */
   test("should use simple sequence for classname when browser", () => {
     const fakeEnv = createFakeEnv();
     const css = createCss({}, (fakeEnv as unknown) as Window);
@@ -288,6 +292,7 @@ describe("createCss", () => {
     // Then we add something new
     clientCss({ color: "blue" }).toString();
     // Lets see if it continues on the correct sequence
+
     expect(fakeEnv.document.styleSheets[1].cssRules.length).toBe(2);
     expect(fakeEnv.document.styleSheets[1].cssRules[0].cssText).toBe(
       "._1757807590 {color: blue;}"

@@ -41,7 +41,7 @@ const toStringCompose = function (this: IComposedAtom) {
 const createToString = (
   sheets: { [screen: string]: ISheet },
   screens: IScreens = {},
-  cssClassnameProvider: (atom: IAtom, seq: number | null) => [string, string?], // [className, pseudo]
+  cssClassnameProvider: (atom: IAtom, seq: number | null) => string,
   preInjectedRules: Set<string>
 ) => {
   let seq = 0;
@@ -51,15 +51,29 @@ const createToString = (
       preInjectedRules.size ? null : seq++
     );
     const shouldInject =
-      !preInjectedRules.size || !preInjectedRules.has(`.${className[0]}`);
+      !preInjectedRules.size || !preInjectedRules.has(`.${className}`);
     const value = this.value;
 
     if (shouldInject) {
       let cssRule = "";
-      if (className.length === 2) {
-        cssRule = `.${className[0]}${className[1]}{${this.cssHyphenProp}:${value};}`;
+      if (this.mediaQueries) {
+        let allMediaQueries = "";
+        let endBrackets = "";
+        this.mediaQueries.forEach((mediaQuery) => {
+          allMediaQueries += `${mediaQuery}{`;
+          endBrackets += "}";
+        });
+        // We need to add extra specificity (className) as we want media queries to override
+        // normal values when active, nesting adds specificity
+        cssRule = `${allMediaQueries}.${className}${this.mediaQueries
+          .map(() => `.${className}`)
+          .join("")}${this.pseudo || ""}{${
+          this.cssHyphenProp
+        }:${value};}${endBrackets}`;
       } else {
-        cssRule = `.${className[0]}{${this.cssHyphenProp}:${value};}`;
+        cssRule = `.${className}${this.pseudo || ""}{${
+          this.cssHyphenProp
+        }:${value};}`;
       }
 
       sheets[this.screen].insertRule(
@@ -71,33 +85,31 @@ const createToString = (
     // 1. delete everything but `id` for specificity check
 
     // @ts-ignore
-    this.cssHyphenProp = this.value = this.pseudo = this.screen = undefined;
+    this.cssHyphenProp = this.value = this.pseudo = this.screen = this.mediaQueries = undefined;
 
     // 2. put on a _className
-    this._className = className[0];
+    this._className = className;
 
     // 3. switch from this `toString` to a much simpler one
     this.toString = toStringCachedAtom;
 
-    return className[0];
+    return className;
   };
 };
 
 const createServerToString = (
   sheets: { [screen: string]: ISheet },
   screens: IScreens = {},
-  cssClassnameProvider: (atom: IAtom, seq: number | null) => [string, string?] // [className, pseudo]
+  cssClassnameProvider: (atom: IAtom, seq: number | null) => string
 ) => {
   return function toString(this: IAtom) {
     const className = cssClassnameProvider(this, null);
     const value = this.value;
 
     let cssRule = "";
-    if (className.length === 2) {
-      cssRule = `.${className[0]}${className[1]}{${this.cssHyphenProp}:${value};}`;
-    } else {
-      cssRule = `.${className[0]}{${this.cssHyphenProp}:${value};}`;
-    }
+    cssRule = `.${className}${this.pseudo || ""}{${
+      this.cssHyphenProp
+    }:${value};}`;
 
     sheets[this.screen].insertRule(
       this.screen ? screens[this.screen](cssRule) : cssRule
@@ -107,12 +119,12 @@ const createServerToString = (
     // to inject multiple times for each request
 
     // 1. put on a _className
-    this._className = className[0];
+    this._className = className;
 
     // 2. switch from this `toString` to a much simpler one
     this.toString = toStringCachedAtom;
 
-    return className[0];
+    return className;
   };
 };
 
@@ -193,10 +205,7 @@ export const createCss = <T extends IConfig>(
       ? `${prefix}_`
       : prefix
     : "";
-  const cssClassnameProvider = (
-    atom: IAtom,
-    seq: number | null
-  ): [string, string?] => {
+  const cssClassnameProvider = (atom: IAtom, seq: number | null): string => {
     const hash =
       seq === null
         ? hashString(
@@ -213,13 +222,8 @@ export const createCss = <T extends IConfig>(
           .map((part) => part[0])
           .join("")}_${hash}`
       : `_${hash}`;
-    const className = `${classPrefix}${name}`;
 
-    if (atom.pseudo) {
-      return [className, atom.pseudo];
-    }
-
-    return [className];
+    return `${classPrefix}${name}`;
   };
 
   const { tags, sheets } = createSheets(env, config.screens);
@@ -254,7 +258,7 @@ export const createCss = <T extends IConfig>(
     cssProp: string,
     value: any,
     screen = "",
-    pseudo?: string
+    selectors?: string[]
   ) => {
     const token: any = cssPropToToken[cssProp as keyof ICssPropToToken<any>];
     let tokenValue: any;
@@ -278,11 +282,17 @@ export const createCss = <T extends IConfig>(
     }
     const isVendorPrefixed = cssProp[0] === cssProp[0].toUpperCase();
 
+    const mediaQueries = selectors?.filter((part) => part.startsWith("@"));
+    const pseudoString = selectors
+      ?.filter((part) => !part.startsWith("@"))
+      .join("");
+
     // generate id used for specificity check
     // two atoms are considered equal in regared to there specificity if the id is equal
     const id =
       cssProp.toLowerCase() +
-      (pseudo ? pseudo.split(":").sort().join(":") : "") +
+      (pseudoString || "") +
+      (mediaQueries ? mediaQueries.join("") : "") +
       screen;
 
     // make a uid accouting for different values
@@ -310,7 +320,8 @@ export const createCss = <T extends IConfig>(
       id,
       cssHyphenProp,
       value: tokenValue,
-      pseudo,
+      pseudo: pseudoString,
+      mediaQueries,
       screen,
       toString,
       [ATOM]: true,
@@ -365,7 +376,7 @@ export const createCss = <T extends IConfig>(
             prop,
             props[prop],
             screen,
-            pseudo.length ? pseudo.join("") : undefined
+            pseudo.length ? pseudo : undefined
           )
         );
       }

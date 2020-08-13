@@ -17,6 +17,7 @@ export interface IAtom {
   cssHyphenProp: string;
   value: string;
   pseudo: string | undefined;
+  mediaQueries: string[] | undefined;
   screen: string;
   _className?: string;
   toString: (this: IAtom) => string;
