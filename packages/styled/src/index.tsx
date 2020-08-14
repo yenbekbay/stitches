@@ -404,7 +404,7 @@ export const createStyled = <
 
   let currentAs: string | undefined;
 
-  const configScreens = (css as any)._config().screens;
+  const configScreens = (css as any)._config().mediaQueries;
 
   const styledInstance = (
     baseStyling: any = (cssComposer: any) => cssComposer.compose(),
