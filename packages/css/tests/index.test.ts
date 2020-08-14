@@ -543,4 +543,26 @@ describe("createCss", () => {
       "/* STITCHES */\n\n._221333491{color:var(--colors-primary);}"
     );
   });
+  test("should increase specificity on :active pseudos", () => {
+    const css = createCss({}, null);
+    const atom = css({
+      ":active": {
+        color: "red",
+      },
+      ":hover": {
+        color: "blue",
+      },
+    }) as any;
+
+    const { styles } = css.getStyles(() => {
+      expect(atom.toString()).toBe("_1987994298 _3029645533");
+
+      return "";
+    });
+
+    expect(styles.length).toBe(2);
+    expect(styles[1].trim()).toBe(
+      "/* STITCHES */\n\n._1987994298:hover{color:blue;}\n._3029645533._3029645533:active{color:red;}"
+    );
+  });
 });

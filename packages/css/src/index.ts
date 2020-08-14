@@ -28,6 +28,14 @@ const toStringCachedAtom = function (this: IAtom) {
   return this._className!;
 };
 
+const createSelector = (className: string, pseudo?: string) => {
+  return pseudo && pseudo.includes("&")
+    ? pseudo.replace(/&/gi, `.${className}`)
+    : pseudo
+    ? `.${className}${pseudo}`
+    : `.${className}`;
+};
+
 const toStringCompose = function (this: IComposedAtom) {
   const className = this.atoms.map((atom) => atom.toString()).join(" ");
 
@@ -54,13 +62,9 @@ const createToString = (
     const shouldInject =
       !preInjectedRules.size || !preInjectedRules.has(`.${className}`);
     const value = this.value;
+
     // Allow using "&" to position the classname, also multiple times
-    const selector =
-      this.pseudo && this.pseudo.includes("&")
-        ? this.pseudo.replace(/&/gi, `.${className}`)
-        : this.pseudo
-        ? `.${className}${this.pseudo}`
-        : `.${className}`;
+    const selector = createSelector(className, this.pseudo);
 
     if (shouldInject) {
       let cssRule = "";
@@ -117,11 +121,10 @@ const createServerToString = (
   return function toString(this: IAtom) {
     const className = cssClassnameProvider(this, null);
     const value = this.value;
+    const selector = createSelector(className, this.pseudo);
 
     let cssRule = "";
-    cssRule = `.${className}${this.pseudo || ""}{${
-      this.cssHyphenProp
-    }:${value};}`;
+    cssRule = `${selector}{${this.cssHyphenProp}:${value};}`;
 
     sheets[this.mediaQuery].insertRule(
       this.mediaQuery ? mediaQueries[this.mediaQuery](cssRule) : cssRule
@@ -298,9 +301,15 @@ export const createCss = <T extends IConfig>(
     const inlineMediaQueries = selectors?.filter((part) =>
       part.startsWith("@")
     );
-    const pseudoString = selectors
+    let pseudoString = selectors
       ?.filter((part) => !part.startsWith("@"))
       .join("");
+
+    // We want :active pseudo selectors to take presedence over other pseudo
+    // selectors, so we increase specificity
+    if (!pseudoString?.match("&") && pseudoString?.match(":active")) {
+      pseudoString = `&&${pseudoString}`;
+    }
 
     // generate id used for specificity check
     // two atoms are considered equal in regared to there specificity if the id is equal
