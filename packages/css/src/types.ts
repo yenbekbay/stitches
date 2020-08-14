@@ -19,6 +19,7 @@ export interface IAtom {
   pseudo: string | undefined;
   inlineMediaQueries: string[] | undefined;
   mediaQuery: string;
+  mediaQuerySpecificityIndex: number;
   _className?: string;
   toString: (this: IAtom) => string;
   [ATOM]: true;

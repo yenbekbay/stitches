@@ -64,21 +64,26 @@ const createToString = (
 
     if (shouldInject) {
       let cssRule = "";
-      if (this.inlineMediaQueries) {
+      if (this.inlineMediaQueries && this.inlineMediaQueries.length) {
         let allMediaQueries = "";
         let endBrackets = "";
         this.inlineMediaQueries.forEach((mediaQuery) => {
           allMediaQueries += `${mediaQuery}{`;
           endBrackets += "}";
         });
-        // We need to add extra specificity (className) as we want media queries to override
-        // normal values when active, nesting adds specificity
-        cssRule = `${allMediaQueries}${selector.replace(
-          `.${className}`,
-          `.${className}${this.inlineMediaQueries
-            .map(() => `.${className}`)
-            .join("")}`
-        )}{${this.cssHyphenProp}:${value};}${endBrackets}`;
+        let specificity = `.${className}`;
+
+        // Based on the key/nested level of the media query we add specificity, which
+        // makes it predictable and optimally reuses media query related atoms
+        for (
+          let x = 0;
+          x < this.inlineMediaQueries.length + this.mediaQuerySpecificityIndex;
+          x++
+        ) {
+          specificity += `.${className}`;
+        }
+
+        cssRule = `${allMediaQueries}${specificity}{${this.cssHyphenProp}:${value};}${endBrackets}`;
       } else {
         cssRule = `${selector}{${this.cssHyphenProp}:${value};}`;
       }
@@ -265,6 +270,7 @@ export const createCss = <T extends IConfig>(
     cssProp: string,
     value: any,
     mediaQuery = "",
+    mediaQuerySpecificityIndex: number,
     selectors?: string[]
   ) => {
     const token: any = cssPropToToken[cssProp as keyof ICssPropToToken<any>];
@@ -301,7 +307,9 @@ export const createCss = <T extends IConfig>(
     const id =
       cssProp.toLowerCase() +
       (pseudoString || "") +
-      (inlineMediaQueries ? inlineMediaQueries.join("") : "") +
+      (inlineMediaQueries && inlineMediaQueries.length
+        ? inlineMediaQueries.join("") + String(mediaQuerySpecificityIndex)
+        : "") +
       mediaQuery;
 
     // make a uid accouting for different values
@@ -331,6 +339,7 @@ export const createCss = <T extends IConfig>(
       value: tokenValue,
       pseudo: pseudoString,
       inlineMediaQueries,
+      mediaQuerySpecificityIndex,
       mediaQuery,
       toString,
       [ATOM]: true,
@@ -348,9 +357,11 @@ export const createCss = <T extends IConfig>(
     cb: (atom: IAtom) => void,
     mediaQuery = "",
     pseudo: string[] = [],
+    mediaQuerySpecificityIndex = 0,
     canCallUtils = true,
     canCallSpecificityProps = true
   ) => {
+    let mediaQueryIndex = 0;
     // tslint:disable-next-line
     for (const prop in props) {
       if (config.mediaQueries && prop in config.mediaQueries) {
@@ -359,15 +370,30 @@ export const createCss = <T extends IConfig>(
             `@stitches/css - You are nesting the mediaQuery "${prop}" into "${mediaQuery}", that makes no sense? :-)`
           );
         }
-        createCssAtoms(props[prop], cb, prop, pseudo);
+        createCssAtoms(
+          props[prop],
+          cb,
+          prop,
+          pseudo,
+          mediaQuerySpecificityIndex
+        );
       } else if (isObject(props[prop])) {
-        createCssAtoms(props[prop], cb, mediaQuery, pseudo.concat(prop));
+        createCssAtoms(
+          props[prop],
+          cb,
+          mediaQuery,
+          pseudo.concat(prop),
+          prop[0] === "@"
+            ? mediaQuerySpecificityIndex + ++mediaQueryIndex
+            : mediaQuerySpecificityIndex
+        );
       } else if (canCallUtils && prop in utils) {
         createCssAtoms(
           utils[prop](config)(props[prop]) as any,
           cb,
           mediaQuery,
           pseudo,
+          mediaQuerySpecificityIndex,
           false
         );
       } else if (canCallSpecificityProps && prop in specificityProps) {
@@ -376,6 +402,7 @@ export const createCss = <T extends IConfig>(
           cb,
           mediaQuery,
           pseudo,
+          mediaQuerySpecificityIndex,
           false,
           false
         );
@@ -385,6 +412,7 @@ export const createCss = <T extends IConfig>(
             prop,
             props[prop],
             mediaQuery,
+            mediaQuerySpecificityIndex,
             pseudo.length ? pseudo : undefined
           )
         );
@@ -398,8 +426,10 @@ export const createCss = <T extends IConfig>(
     cb: (atom: IAtom) => void,
     mediaQuery = "",
     pseudo: string[] = [],
+    mediaQuerySpecificityIndex = 0,
     canOverride = true
   ) => {
+    let mediaQueryIndex = 0;
     // tslint:disable-next-line
     for (const prop in props) {
       if (prop === "override") {
@@ -408,20 +438,36 @@ export const createCss = <T extends IConfig>(
             "@stitches/css - You can not override at this level, only at the top level definition"
           );
         }
-        createCssAtoms(props[prop], cb, mediaQuery, pseudo);
+        createCssAtoms(
+          props[prop],
+          cb,
+          mediaQuery,
+          pseudo,
+          mediaQuerySpecificityIndex
+        );
       } else if (config.mediaQueries && prop in config.mediaQueries) {
         if (mediaQuery) {
           throw new Error(
             `@stitches/css - You are nesting the mediaQuery "${prop}" into "${mediaQuery}", that makes no sense? :-)`
           );
         }
-        createUtilsAtoms(props[prop], cb, prop, pseudo, false);
+        createUtilsAtoms(
+          props[prop],
+          cb,
+          prop,
+          pseudo,
+          mediaQuerySpecificityIndex,
+          false
+        );
       } else if (isObject(props[prop])) {
         createUtilsAtoms(
           props[prop],
           cb,
           mediaQuery,
           pseudo.concat(prop),
+          prop[0] === "@"
+            ? mediaQuerySpecificityIndex + ++mediaQueryIndex
+            : mediaQuerySpecificityIndex,
           false
         );
       } else if (prop in utils) {
@@ -430,6 +476,7 @@ export const createCss = <T extends IConfig>(
           cb,
           mediaQuery,
           pseudo,
+          mediaQuerySpecificityIndex,
           false
         );
       } else {
