@@ -32,7 +32,7 @@ const createSelector = (className: string, pseudo?: string) => {
   return pseudo && pseudo.includes("&")
     ? pseudo.replace(/&/gi, `.${className}`)
     : pseudo
-    ? `.${className}${pseudo}`
+    ? `.${className}${pseudo[0] === ":" ? pseudo : " " + pseudo}`
     : `.${className}`;
 };
 
@@ -64,7 +64,6 @@ const createToString = (
     const value = this.value;
 
     // Allow using "&" to position the classname, also multiple times
-    const selector = createSelector(className, this.pseudo);
 
     if (shouldInject) {
       let cssRule = "";
@@ -75,21 +74,15 @@ const createToString = (
           allMediaQueries += `${mediaQuery}{`;
           endBrackets += "}";
         });
-        let specificity = `.${className}`;
 
-        // Based on the key/nested level of the media query we add specificity, which
-        // makes it predictable and optimally reuses media query related atoms
-        for (
-          let x = 0;
-          x < this.inlineMediaQueries.length + this.mediaQuerySpecificityIndex;
-          x++
-        ) {
-          specificity += `.${className}`;
-        }
-
-        cssRule = `${allMediaQueries}${specificity}{${this.cssHyphenProp}:${value};}${endBrackets}`;
+        cssRule = `${allMediaQueries}${createSelector(
+          className,
+          this.pseudo
+        )}{${this.cssHyphenProp}:${value};}${endBrackets}`;
       } else {
-        cssRule = `${selector}{${this.cssHyphenProp}:${value};}`;
+        cssRule = `${createSelector(className, this.pseudo)}{${
+          this.cssHyphenProp
+        }:${value};}`;
       }
 
       sheets[this.mediaQuery].insertRule(
@@ -317,7 +310,7 @@ export const createCss = <T extends IConfig>(
       cssProp.toLowerCase() +
       (pseudoString || "") +
       (inlineMediaQueries && inlineMediaQueries.length
-        ? inlineMediaQueries.join("") + String(mediaQuerySpecificityIndex)
+        ? inlineMediaQueries.join("")
         : "") +
       mediaQuery;
 
@@ -348,7 +341,7 @@ export const createCss = <T extends IConfig>(
       value: tokenValue,
       pseudo: pseudoString,
       inlineMediaQueries,
-      mediaQuerySpecificityIndex,
+      mediaQuerySpecificityIndex: 0,
       mediaQuery,
       toString,
       [ATOM]: true,
@@ -371,6 +364,7 @@ export const createCss = <T extends IConfig>(
     canCallSpecificityProps = true
   ) => {
     let mediaQueryIndex = 0;
+
     // tslint:disable-next-line
     for (const prop in props) {
       if (config.mediaQueries && prop in config.mediaQueries) {
