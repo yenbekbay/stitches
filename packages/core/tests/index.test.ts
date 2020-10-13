@@ -1764,6 +1764,26 @@ describe('strict mode', () => {
     `);
   });
 
+  test('should handle pseudos with commas that are seperated by a whitespace', () => {
+    const css = createCss({}, null);
+    const atomOne = css({ '&:hover, &:focus': { color: 'red' } }) as any;
+    const atomTwo = css({ '& :hover, & :focus': { color: 'red' } }) as any;
+
+    const { styles } = css.getStyles(() => {
+      expect(atomOne.toString()).toMatchInlineSnapshot(`"_jqcxER"`);
+      expect(atomTwo.toString()).toMatchInlineSnapshot(`"_lawjaJ"`);
+
+      return '';
+    });
+
+    expect(styles.length).toBe(3);
+    expect(styles[2].trim()).toMatchInlineSnapshot(`
+      "/* STITCHES */
+      ./*X*/_lawjaJ/*X*/./*X*/_lawjaJ/*X*/ :hover,./*X*/_lawjaJ/*X*/./*X*/_lawjaJ/*X*/./*X*/_lawjaJ/*X*/./*X*/_lawjaJ/*X*/ :focus{color:red;}
+      ./*X*/_jqcxER/*X*/./*X*/_jqcxER/*X*/:hover,./*X*/_jqcxER/*X*/./*X*/_jqcxER/*X*/./*X*/_jqcxER/*X*/./*X*/_jqcxER/*X*/:focus{color:red;}"
+    `);
+  });
+
   test('should handle deeply nested comma based rules by generating all possible combinations as a single rule', () => {
     const css = createCss({}, null);
     const atom = css({

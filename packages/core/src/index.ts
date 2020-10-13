@@ -93,7 +93,8 @@ const mergeSelectors = (firstSelector: string, secondSelector: string) => {
 // we should experiment handling pseudo classes
 // specificity via buckets in the sheet
 const fixSpecificity = (selectorString: string) => {
-  let _selectorString = selectorString;
+  const startsWithPseudo = selectorString.match(/\s*\:\:?[a-zA-Z\-]+/);
+  let _selectorString = startsWithPseudo ? selectorString.trimLeft() : selectorString;
   // We want certain pseudo selectors to take precedence over other pseudo
   // selectors, so we increase specificity
   if (_selectorString[0] === '%' || !_selectorString.match('%')) {
