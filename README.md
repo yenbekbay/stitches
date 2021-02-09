@@ -6,6 +6,18 @@
 
 Near-zero runtime, server-side rendering, multi-variant support, and best-in-class developer experience.
 
+```sh
+npm install @stitches/core
+```
+
+[Read more](https://github.com/modulz/stitches/tree/jn.oo/packages/core)
+
+```sh
+npm install @stitches/react
+```
+
+[Read more](https://github.com/modulz/stitches/tree/jn.oo/packages/react)
+
 ---
 
 ## Documentation

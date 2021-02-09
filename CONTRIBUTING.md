@@ -60,7 +60,7 @@ scope and avoid unrelated commits.
 
 That’s it! Now [open a pull request] with a clear title and description.
 
-[already been reported]: issues
+[already been reported]: https://github.com/modulz/stitches/issues
 [fork this project]:     https://github.com/modulz/stitches/fork
 [live example]:          https://codesandbox.io/
 [open a pull request]:   https://help.github.com/articles/using-pull-requests/
