@@ -225,12 +225,12 @@ export default (init) => {
 							if (name in props) {
 								const propValue = props[name]
 								const compounderValue = compounders[name]
-								if (propValue === compounderValue) return true
+								if (propValue == compounderValue) return true
 								if (propValue === Object(propValue)) {
 									for (const innerName in propValue) {
 										const innerValue = propValue[innerName]
 										const condition = conditions[innerName] || innerName
-										if (compounderValue === innerValue) {
+										if (compounderValue == innerValue) {
 											appliedCompoundStyle = { [condition]: appliedCompoundStyle }
 										}
 									}
