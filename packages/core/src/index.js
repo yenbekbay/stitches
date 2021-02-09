@@ -37,26 +37,41 @@ export default (init) => {
 
 	/** Prepares global CSS and returns a function that enables the styles on the styled sheet. */
 	const theme = (
-		/** Identifier */
+		/** Class name */
 		className,
 		/** Object of theme scales with inner token values. */
 		theme,
 	) => {
-		/** CSS Selector */
-		const selector = (className || ':root').replace(/^[A-Za-z-]/, `.${prefix}$&`)
+		// class name is the first argument if it is a string, otherwise an empty string
+		className = typeof className === 'string' ? className.replace(/^\w/, prefix + '$&') : ''
 
-		className = selector.slice(1)
+		// theme is the first argument if it is an object, otherwise the second argument as an object
+		theme = className === Object(className) ? className : Object(theme)
+
+		/** Custom property styles representing themed token values. */
+		const customPropertyStyles = getCustomProperties(theme)
+
+		// class name is either itself or the unique hash representing its styles
+		className = className || getHashString(prefix, customPropertyStyles)
+
+		/** CSS Selector */
+		const selector = className.replace(/^\w/, '.$&')
 
 		/** Computed CSS */
-		const cssText = getComputedCss({
-			[selector]: getCustomProperties(theme),
-		})
+		const cssText = getComputedCss({ [selector]: customPropertyStyles })
 
-		const expressThemedRule = () => {
+		/** Themed Rule that activates styles on the styled sheet. */
+		const expressThemedRule = assign(() => {
 			themedRules.addCss(cssText)
 
 			return expressThemedRule
-		}
+		}, {
+			toString() {
+				return this().className
+			},
+			className,
+			selector,
+		})
 
 		for (const scale in theme) {
 			expressThemedRule[scale] = create(null)
@@ -66,13 +81,7 @@ export default (init) => {
 			}
 		}
 
-		return assign(expressThemedRule, {
-			toString() {
-				return this.className
-			},
-			className,
-			selector,
-		})()
+		return expressThemedRule
 	}
 
 	/** Returns a function that enables the styles on the styled sheet. */
@@ -308,9 +317,7 @@ export default (init) => {
 		)
 	}
 
-	const defaultThemed = theme(':root', init.theme)
-
-	assign(theme, defaultThemed)
+	assign(theme, theme(':root', init.theme)())
 
 	return {
 		global,
@@ -326,7 +333,7 @@ export default (init) => {
 
 			init.onResets && init.onResets.call(this)
 
-			defaultThemed()
+			theme.toString()
 
 			return this
 		},
