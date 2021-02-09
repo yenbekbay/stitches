@@ -10,9 +10,9 @@
     "build:watch": "nodemon --watch packages/core/src --watch packages/core/tests --watch packages/react/src --watch packages/react/tests --exec \"clear; npm run build\"",
     "prerelease": "npm run build && npm run test",
     "release": "lerna publish",
-    "release:canary": "lerna publish --dist-tag canary",
-    "release:dryrun": "lerna publish from-package --dist-tag canary --no-git-tag-version --no-push",
-    "release:pack": "lerna run npm pack",
+    "release:canary": "npm run prerelease && lerna publish --dist-tag canary",
+    "release:dryrun": "npm run prerelease && lerna publish from-package --dist-tag canary --no-git-tag-version --no-push",
+    "release:pack": "npm run prerelease && lerna exec -- npm pack",
     "postinstall": "run-s bootstrap",
     "test": "node .bin/test",
     "test:watch": "nodemon --watch packages/core/src --watch packages/core/tests --watch packages/react/src --watch packages/react/tests --exec \"clear; npm run test\""
