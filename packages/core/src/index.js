@@ -15,7 +15,7 @@ export default (init) => {
 	const conditions = assign({ initial: '@media all' }, init.conditions)
 
 	/** Prefix added before all generated class names. */
-	const prefix = init.prefix || 's'
+	const prefix = init.prefix || 'sx'
 
 	/** Attribute class names are set to on props. */
 	const classProp = init.classProp || 'className'

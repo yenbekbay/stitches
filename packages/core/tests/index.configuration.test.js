@@ -46,7 +46,7 @@ describe('Prefix', () => {
 
 		component.toString()
 
-		expect(stitches.toString()).toBe('.fusion-q3ye05{color:red;}')
+		expect(stitches.toString()).toBe('.fusion-3ye05{color:red;}')
 	})
 })
 
@@ -75,7 +75,7 @@ describe('Conditions', () => {
 
 		component.toString()
 
-		expect(stitches.toString()).toBe(`.slqh7cb{font-size:16px;}${MEDIUM_UP}{.slqh7cb{font-size:24px;}}`)
+		expect(stitches.toString()).toBe(`.sxqh7cb{font-size:16px;}${MEDIUM_UP}{.sxqh7cb{font-size:24px;}}`)
 	})
 })
 
@@ -97,6 +97,6 @@ describe('Properties', () => {
 
 		component.toString()
 
-		expect(stitches.toString()).toBe('.svxl9ux{background-color:red;}')
+		expect(stitches.toString()).toBe('.sxxl9ux{background-color:red;}')
 	})
 })
