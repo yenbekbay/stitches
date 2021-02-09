@@ -311,7 +311,6 @@ export default (init) => {
 				classNames,
 				cssText,
 				selector,
-				style,
 				variants,
 			},
 		)
