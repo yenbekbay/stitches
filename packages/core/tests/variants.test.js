@@ -26,7 +26,7 @@ describe('Variants', () => {
 				},
 				large: {
 					fontSize: '24px',
-				}
+				},
 			},
 			level: {
 				1: {
@@ -34,17 +34,18 @@ describe('Variants', () => {
 				},
 				2: {
 					padding: '1em',
-				}
-			}
+				},
+			},
 		},
 		compounds: [
-			[
-				{ size: 'small', color: 'blue' },
-				{
+			{
+				size: 'small',
+				color: 'blue',
+				css: {
 					transform: 'scale(1.2)',
-				}
-			]
-		]
+				},
+			},
+		],
 	})
 
 	test('Renders a component without any initial styles', () => {
@@ -112,7 +113,7 @@ describe('Variants with defaults', () => {
 				},
 				large: {
 					fontSize: '24px',
-				}
+				},
 			},
 			level: {
 				1: {
@@ -120,20 +121,21 @@ describe('Variants with defaults', () => {
 				},
 				2: {
 					padding: '1em',
-				}
-			}
+				},
+			},
 		},
 		compounds: [
-			[
-				{ size: 'small', color: 'blue' },
-				{
+			{
+				size: 'small',
+				color: 'blue',
+				css: {
 					transform: 'scale(1.2)',
-				}
-			]
+				},
+			},
 		],
 		defaults: {
-			size: 'small'
-		}
+			size: 'small',
+		},
 	})
 
 	test('Renders a component with the default variant applied', () => {
@@ -194,8 +196,8 @@ describe('Conditional variants', () => {
 	const STITCHES = createCss({
 		conditions: {
 			sm: '@media (max-width: 767px)',
-			lg: '@media (min-width: 768px)'
-		}
+			lg: '@media (min-width: 768px)',
+		},
 	})
 
 	/** Component with variants and compound variants */
@@ -217,7 +219,7 @@ describe('Conditional variants', () => {
 				},
 				large: {
 					fontSize: '24px',
-				}
+				},
 			},
 			level: {
 				1: {
@@ -225,21 +227,22 @@ describe('Conditional variants', () => {
 				},
 				2: {
 					padding: '1em',
-				}
-			}
+				},
+			},
 		},
 		compounds: [
-			[
-				{ size: 'small', color: 'blue' },
-				{
+			{
+				size: 'small',
+				color: 'blue',
+				css: {
 					transform: 'scale(1.2)',
-				}
-			]
+				},
+			},
 		],
 	})
 
 	test('Renders a component with a conditional variant applied', () => {
-		component_1 = COMPONENT({ size: { sm: 'small', lg: 'large' }})
+		component_1 = COMPONENT({ size: { sm: 'small', lg: 'large' } })
 		classname_1 = 'sx03kze sx03kzetmy8g--size-small sx03kzetmy8g--size-small--5m2l7 sx03kzefhyhx--size-large sx03kzefhyhx--size-large--8c3r4'
 		stylerule_1 = '@media (max-width: 767px){.sx03kzetmy8g--size-small--5m2l7{font-size:16px;}}@media (min-width: 768px){.sx03kzefhyhx--size-large--8c3r4{font-size:24px;}}'
 
@@ -248,7 +251,7 @@ describe('Conditional variants', () => {
 	})
 
 	test('Renders a component with a conditional variant applied', () => {
-		component_2 = COMPONENT({ level: { sm: 1, lg: 2 }})
+		component_2 = COMPONENT({ level: { sm: 1, lg: 2 } })
 		classname_2 = 'sx03kze sx03kzehmqox--level-1 sx03kzehmqox--level-1--5m2l7 sx03kzef87fs--level-2 sx03kzef87fs--level-2--8c3r4'
 		stylerule_2 = stylerule_1 + '@media (max-width: 767px){.sx03kzehmqox--level-1--5m2l7{padding:0.5em;}}@media (min-width: 768px){.sx03kzef87fs--level-2--8c3r4{padding:1em;}}'
 
@@ -257,7 +260,7 @@ describe('Conditional variants', () => {
 	})
 
 	test('Renders a component with a conditional compund variant applied', () => {
-		component_3 = COMPONENT({ color: 'blue', size: { sm: 'small', lg: 'large' }})
+		component_3 = COMPONENT({ color: 'blue', size: { sm: 'small', lg: 'large' } })
 		classname_3 = 'sx03kze sx03kzekclug--comp sx03kze4wpam--color-blue sx03kzetmy8g--size-small sx03kzefhyhx--size-large'
 		stylerule_3 = stylerule_2 + '.sx03kze4wpam--color-blue{background-color:dodgerblue;color:white;}@media (max-width: 767px){.sx03kzekclug--comp{transform:scale(1.2);}}'
 
