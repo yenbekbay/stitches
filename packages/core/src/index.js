@@ -128,7 +128,7 @@ export default (init) => {
 		/** Styles for the current component, when extending another component. */
 		extendedStyle,
 	) => {
-		const { compounds, defaults = {}, variants: variantsStyle, ...style } = Object(extendedStyle || initStyle)
+		const { variants: variantsStyle, compoundVariants, defaultVariants, ...style } = Object(extendedStyle || initStyle)
 
 		/** Composing rule, if present, otherwise an empty object. */
 		const composer = Object(extendedStyle && initStyle)
@@ -206,9 +206,8 @@ export default (init) => {
 
 				let expressClassNames = new Set(classNames())
 
-				for (const propName in defaults) {
-					if (propName in props) {
-					} else props[propName] = defaults[propName]
+				for (const propName in defaultVariants) if (!(propName in props) && propName in variants) {
+					props[propName] = defaultVariants[propName]
 				}
 
 				if (classProp in props) {
@@ -217,7 +216,7 @@ export default (init) => {
 					delete props[classProp]
 				}
 
-				for (const compound of [].concat(compounds || [])) {
+				for (const compound of [].concat(compoundVariants || [])) {
 					const { css: compoundStyle, ...compounders } = Object(compound)
 
 					let appliedCompoundStyle = compoundStyle

@@ -37,7 +37,7 @@ describe('Variants', () => {
 				},
 			},
 		},
-		compounds: [
+		compoundVariants: [
 			{
 				size: 'small',
 				color: 'blue',
@@ -124,7 +124,7 @@ describe('Variants with defaults', () => {
 				},
 			},
 		},
-		compounds: [
+		compoundVariants: [
 			{
 				size: 'small',
 				color: 'blue',
@@ -133,7 +133,7 @@ describe('Variants with defaults', () => {
 				},
 			},
 		],
-		defaults: {
+		defaultVariants: {
 			size: 'small',
 		},
 	})
@@ -230,7 +230,7 @@ describe('Conditional variants', () => {
 				},
 			},
 		},
-		compounds: [
+		compoundVariants: [
 			{
 				size: 'small',
 				color: 'blue',
