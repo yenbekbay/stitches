@@ -127,4 +127,4 @@ const test = root => Promise.all([
 	}
 })).then(() => exitCode)
 
-test(new URL('.', import.meta.url)).then(process.exit)
+test(new URL('..', import.meta.url)).then(process.exit)

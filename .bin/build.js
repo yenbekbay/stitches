@@ -16,7 +16,9 @@ async function buildPackage(release, variants) {
 	const outputPathname = new URL('stitches.js', distPackageURL).pathname
 
 	// Build ESM version
-	const { outputFiles: [cmapResult, codeResult] } = await esbuild.build({
+	const {
+		outputFiles: [cmapResult, codeResult],
+	} = await esbuild.build({
 		entryPoints: [targetPathname],
 		outfile: outputPathname,
 		bundle: true,
@@ -48,10 +50,7 @@ async function buildPackage(release, variants) {
 	const splitByExport = (code, index = code.indexOf('export')) => [code.slice(0, index), code.slice(index)]
 	const [lead, tail] = splitByExport(code)
 
-	const exports = Array.from(tail.matchAll(/(\w+) as (\w+)/g)).reduce(
-		(exports, each) => Object.assign(exports, { [each[2]]: each[1] }),
-		Object.create(null)
-	)
+	const exports = Array.from(tail.matchAll(/(\w+) as (\w+)/g)).reduce((exports, each) => Object.assign(exports, { [each[2]]: each[1] }), Object.create(null))
 
 	// write variation builds
 	for (const variant in variants) {
@@ -65,32 +64,44 @@ async function buildPackage(release, variants) {
 	}
 }
 
-async function build() {
-	const variants = {
-		esm(code, exports) {
-			const esmExports = []
-			for (const name in exports) esmExports.push(`${exports[name]} as ${name}`)
-			return `${code}export{${esmExports.join(',')}}`
-		},
-		cjs(code, exports) {
-			const cjsExports = ['__esModule:!0']
-			for (const name in exports) cjsExports.push(`${name}:${exports[name]}`)
-			return `${code}module.exports={${cjsExports.join(',')}}`
-		},
-		iife(code, exports) {
-			let iifeExports = ['globalThis.stitches=' + exports.default]
-			for (let name in exports) if (name !== 'default') iifeExports.push(`stitches.${name}=${exports[name]}`)
-			return `(()=>{${code}${iifeExports.join(';')}})()`
-		}
-	}
+/** Packages directory. */
+const pkgsURL = new URL('../packages/', import.meta.url)
 
-	await buildPackage('core', variants)
-	await buildPackage('react', variants)
-
-	console.log()
+const variants = {
+	esm(code, exports) {
+		const esmExports = []
+		for (const name in exports) esmExports.push(`${exports[name]} as ${name}`)
+		return `${code}export{${esmExports.join(',')}}`
+	},
+	cjs(code, exports) {
+		const cjsExports = ['__esModule:!0']
+		for (const name in exports) cjsExports.push(`${name}:${exports[name]}`)
+		return `${code}module.exports={${cjsExports.join(',')}}`
+	},
+	iife(code, exports) {
+		let iifeExports = ['globalThis.stitches=' + exports.default]
+		for (let name in exports) if (name !== 'default') iifeExports.push(`stitches.${name}=${exports[name]}`)
+		return `(()=>{${code}${iifeExports.join(';')}})()`
+	},
 }
 
-/** Packages directory. */
-const pkgsURL = new URL('./packages/', import.meta.url)
+const buildCore = async () => {
+	await buildPackage('core', variants)
+	await buildPackage('react', variants)
+}
 
-build()
+const buildReact = async () => {
+	await buildPackage('react', variants)
+}
+
+if (process.argv.includes('--watch')) {
+	Array.from(
+		[
+			[new URL('core/src/', pkgsURL).pathname, buildCore],
+			[new URL('react/src/', pkgsURL).pathname, buildReact],
+		],
+		([watchdir, build]) => new FSWatcher(watchdir, build),
+	)
+} else {
+	buildCore().then(() => console.log())
+}
