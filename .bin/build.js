@@ -54,8 +54,9 @@ async function buildPackage(release, variants) {
 
 	// write variation builds
 	for (const variant in variants) {
-		const variantPath = new URL(`dist/stitches.${release}.${variant}.js`, rootPackageURL).pathname
-		const variantCode = variants[variant](lead, exports)
+		const variantInfo = variants[variant]
+		const variantPath = new URL(`dist/stitches.${release}.${variant}.${variantInfo.extension}`, rootPackageURL).pathname
+		const variantCode = variantInfo.transform(lead, exports)
 		const variantSize = Number((zlib.gzipSync(variantCode, { level: 9 }).length / 1000).toFixed(2))
 
 		console.log(' ', `\x1b[33m${variantSize} kB\x1b[0m`, `\x1b[2m(${variant})\x1b[0m`)
@@ -68,20 +69,29 @@ async function buildPackage(release, variants) {
 const pkgsURL = new URL('../packages/', import.meta.url)
 
 const variants = {
-	esm(code, exports) {
-		const esmExports = []
-		for (const name in exports) esmExports.push(`${exports[name]} as ${name}`)
-		return `${code}export{${esmExports.join(',')}}`
+	esm: {
+		extension: 'mjs',
+		transform(code, exports) {
+			const esmExports = []
+			for (const name in exports) esmExports.push(`${exports[name]} as ${name}`)
+			return `${code}export{${esmExports.join(',')}}`
+		},
 	},
-	cjs(code, exports) {
-		const cjsExports = ['__esModule:!0']
-		for (const name in exports) cjsExports.push(`${name}:${exports[name]}`)
-		return `${code}module.exports={${cjsExports.join(',')}}`
+	cjs: {
+		extension: 'cjs',
+		transform(code, exports) {
+			const cjsExports = ['__esModule:!0']
+			for (const name in exports) cjsExports.push(`${name}:${exports[name]}`)
+			return `${code}module.exports={${cjsExports.join(',')}}`
+		},
 	},
-	iife(code, exports) {
-		let iifeExports = ['globalThis.stitches=' + exports.default]
-		for (let name in exports) if (name !== 'default') iifeExports.push(`stitches.${name}=${exports[name]}`)
-		return `(()=>{${code}${iifeExports.join(';')}})()`
+	iife: {
+		extension: 'js',
+		transform(code, exports) {
+			let iifeExports = ['globalThis.stitches=' + exports.default]
+			for (let name in exports) if (name !== 'default') iifeExports.push(`stitches.${name}=${exports[name]}`)
+			return `(()=>{${code}${iifeExports.join(';')}})()`
+		},
 	},
 }
 

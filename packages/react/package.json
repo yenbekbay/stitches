@@ -4,8 +4,8 @@
   "description": "The OOCSS-in-JS React library",
   "type": "module",
   "typings": "types/index.d.ts",
-  "main": "dist/stitches.react.cjs.js",
-  "module": "dist/stitches.react.esm.js",
+  "main": "dist/stitches.react.cjs.cjs",
+  "module": "dist/stitches.react.esm.mjs",
   "unpkg": "dist/stitches.react.iife.js",
   "files": [
     "dist",

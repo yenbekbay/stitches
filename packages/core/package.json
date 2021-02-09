@@ -4,8 +4,8 @@
   "description": "The OOCSS-in-JS library",
   "type": "module",
   "typings": "types/index.d.ts",
-  "main": "dist/stitches.core.cjs.js",
-  "module": "dist/stitches.core.esm.js",
+  "main": "dist/stitches.core.cjs.cjs",
+  "module": "dist/stitches.core.esm.mjs",
   "unpkg": "dist/stitches.core.iife.js",
   "files": [
     "dist",
