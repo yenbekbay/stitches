@@ -25,6 +25,8 @@
     "@stitches/core": "0.1.0-canary.1"
   },
   "devDependencies": {
+    "@radix-ui/react-separator": "^0.0.5",
+    "@radix-ui/react-polymorphic": "^0.0.5",
     "react": "17.0.1"
   },
   "peerDependencies": {
